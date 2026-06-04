@@ -97,29 +97,37 @@
 ;;   ==> (motivation (0.4 0.6) (0.5 0.5))
 (= (nextStateCalculator $currState $targetState $alpha)
     (let* (
-        ($nAlpha (- 1.0 $alpha))
-        ($newGoals    (vectorAdd (scaleArray (motivationGoals    $currState)   $nAlpha)
-                                 (scaleArray (motivationGoals    $targetState) $alpha)))
-        ($newMods     (vectorAdd (scaleArray (motivationModulators $currState)   $nAlpha)
-                                 (scaleArray (motivationModulators $targetState) $alpha)))
+        ((motivation $goals $modulators) $currState)
+        ($nAlpha (- 1 $alpha))
+        ($nGoals (scaleArray $goals $nAlpha))
+        ($alphaGoals (scaleArray $goals $alpha))
+        ($nModulators (scaleArray $modulators $nAlpha))
+        ($alphaModulators (scaleArray $modulators $alpha))
+        ($newGoals (vectorAdd $nGoals $alphaGoals))
+        ($newModulators (vectorAdd $nModulators $alphaModulators))
     )
-        (motivation $newGoals $newMods)
+        (motivation $newGoals $newModulators)
+    )
+)
+
+;; stateTowardTarget
+;;
+;; Build an alpha-weighted transition candidate from currentState toward
+;; targetState.
+(= (stateTowardTarget $currentState $targetState $alpha)
+    (motivation
+        (blendArrays (motivationGoals $currentState) (motivationGoals $targetState) $alpha)
+        (blendArrays (motivationModulators $currentState) (motivationModulators $targetState) $alpha)
     )
 )
 
 
 ;; blendStatesHelper
 ;;
-;; Recursive worker for blendStates.
-;; At each step it computes:
-;;   candidate = (1 - alpha)*currentState + alpha*targetState
-;; and checks the drift from currentState to that candidate.
-;; If the drift is within bounds, OR alpha has fallen to the minimum,
-;; the candidate is returned. Otherwise alpha is halved and we recurse.
-;;
-;; NOTE: $currentState is always the FIXED original state.
-;;       The blend is always computed from it, not from a rolling candidate.
-;;       This mirrors: while True: next = (1-α)*current + α*target; if ok: return
+;; Recursive worker for blendStates. It checks whether the target transition
+;; respects the drift bound, or whether alpha has reached the minimum allowed
+;; alpha. If either condition is met, it returns the current candidate next
+;; state. Otherwise, it computes a smaller partial transition and recurses.
 ;;
 ;; Parameters:
 ;;   $currentState      - original (fixed) state, used for both blending and drift checks.
@@ -136,14 +144,14 @@
 ;;   (blendStatesHelper currentState targetState 0.2 0.02 1.0 0.1)
 (= (blendStatesHelper $currentState $targetState $alpha $minAlpha $lipschitzConstant $maxAllowedDrift)
     (let* (
-        ($candidate  (nextStateCalculator $currentState $targetState $alpha))
-        ($driftOk    (checkSelfModelDrift $currentState $candidate $lipschitzConstant $maxAllowedDrift))
-        ($nextAlpha  (* $alpha 0.5))
+        ($selfModelDrift (checkSelfModelDrift $currentState $nextState $lipschitzConstant $maxAllowedDrift))
+        ($nextAlpha (* 0.5 $alpha))
+        ($nextState' (stateTowardTarget $currentState $targetState $nextAlpha))
     )
-        (if (or $driftOk (<= $alpha $minAlpha))
-            $candidate
-            (blendStatesHelper $currentState $targetState $nextAlpha $minAlpha $lipschitzConstant $maxAllowedDrift)
-        )
+        (if (or $selfModelDrift (<= $alpha $minAlpha))
+            $nextState
+            (blendStatesHelper $currentState $nextState' $targetState $nextAlpha $minAlpha $lipschitzConstant $maxAllowedDrift)
+        )  
     )
     
 )
@@ -175,6 +183,6 @@
         ($baseAlpha (calculateBlendFactor $currentState))
         ($minAlpha  (* $minAlphaScale $baseAlpha))
     )
-        (blendStatesHelper $currentState $targetState $baseAlpha $minAlpha $lipschitzConstant $maxAllowedDrift)
+        (blendStatesHelper $currentState $targetState $targetState $alpha $minAlpha $lipschitzConstant $maxAllowedDrift)
     )
 )
