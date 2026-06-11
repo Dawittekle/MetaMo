@@ -83,6 +83,7 @@
       ; Step 4 ─ Wrap motivation state in subsystemStates for cycle
       ; Prepares input for MetaMo bimonad cycle
 
+      ; this can be extended to multiple subsystems with different motivations if needed 
       ($states ((subsystemState qwestor $current-motiv) (subsystemState ethics $current-motiv)))
       ($_ (println! ("[STEP 4] state: " $states)))
 
@@ -96,7 +97,8 @@
       ($cycle-result
         (runMetaMoCycleDefault
           (eval (defaultMetaMoBimonad))
-          (eval (integrationStates qwestor ethics (eval (integrationState $current-motiv))))
+          ; Single subsystem (Qwestor) for now, but can be extended to multiple
+          ((subsystemState qwestor $current-motiv))
           (eval (integrationStimulus $stimulus-final))
           (eval (qwestorCandidates))
           ()  

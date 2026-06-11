@@ -169,7 +169,7 @@
       ($_ (println! (candidates $candidate)))
 
       ($_ (println! "--------------------- Next Motivation State ------------------------"))
-      ($_ (println! (motivationSummary $next-motiv)))
+      ($_ (println! (eval (motivationSummary $next-motiv))))
     )
     done
   )
