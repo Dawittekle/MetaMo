@@ -36,8 +36,12 @@ jobs:
       - name: Install SWI-Prolog
         run: |
           sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo apt-add-repository -y ppa:swi-prolog/stable
+          sudo apt-get update
           sudo apt-get install -y swi-prolog
           swipl --version
+          dpkg --compare-versions "$(swipl --version | awk '{print $3}')" ge 9.1.12
 
       - name: Checkout PeTTa
         run: |
