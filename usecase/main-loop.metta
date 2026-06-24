@@ -29,6 +29,7 @@
 !(import! &self adapters/stimulus_adapter)
 !(import! &self adapters/qwestor_actions)
 
+
 !(import! &self "../core/helpers.py")
 !(import! &self ../core/helper)
 !(import! &self ../core/state)
@@ -47,6 +48,9 @@
 !(import! &self "session_store.py")
 !(import! &self "io_bridge.py")
 !(import! &self session_helpers)
+
+!(import! &self ../llm/llm)
+!(import! &self "../llm/metta_bridge.py")
 
 
 ; Initialize a new reasoning space for Qwestor
