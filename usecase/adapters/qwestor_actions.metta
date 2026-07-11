@@ -256,7 +256,7 @@
       ($reflective_intent       (findByKey reflective_intent $context-list))
       ($complexity              (findByKey complexity $context-list))
     )
-    (if (or (== $verify_request 1.0) (or (> $threshold 0.75) (> $failure_signal 0.65)))
+    (if (or (== $verify_request 1) (or (> $threshold 0.75) (> $failure_signal 0.65)))
         (qwestorVerifyCandidates)
         (if (> $ambiguity 0.65)
             (qwestorClarifyCandidates)
